@@ -1,0 +1,12 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# SQLite Database
+streamly.db
+*.db-shm
+*.db-wal
+
+# Environment
+.env

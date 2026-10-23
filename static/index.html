@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevFest Akure 2026 · Mind the Gap</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="container">
+        <header>
+            <div class="header-titles">
+                <p class="eyebrow">DEVFEST AKURE 2026 · RELIABILITY LAB</p>
+                <h1>Mind the Gap</h1>
+                <p class="subtitle">A streaming research assistant that survives the browser leaving. Disconnect, wait, reconnect, and watch the journal replay the missed output into the same run.</p>
+            </div>
+            <div class="badges">
+                <span class="badge green">mock agent</span>
+                <span class="badge outline">reliable build</span>
+            </div>
+        </header>
+
+        <section class="panel controls-panel">
+            <label class="section-label">RESEARCH TOPIC</label>
+            <div class="input-row">
+                <input type="text" id="topic-input" value="How do distributed queues handle worker failures?">
+                <button id="start-btn" class="primary">Start run</button>
+            </div>
+            
+            <div class="action-row">
+                <button id="disconnect-btn" class="secondary" disabled>Disconnect</button>
+                <button id="reconnect-btn" class="secondary" disabled>Reconnect</button>
+                <button id="cancel-btn" class="danger-outline" disabled>Cancel run</button>
+                <button id="retry-post-btn" class="secondary" disabled>Retry POST (same key)</button>
+                <button id="duplicate-btn" class="secondary" disabled>Duplicate-delivery test</button>
+                <!-- CHALLENGE 3: Replay from 0 -->
+                <button id="replay-zero-btn" class="secondary" disabled>Replay from 0</button>
+            </div>
+
+            <div id="status-banner" class="banner success" style="display: none;">
+                Research run completed.
+            </div>
+        </section>
+
+        <section class="telemetry-grid">
+            <div class="telemetry-card">
+                <span class="label">RUN ID</span>
+                <span class="value mono" id="tel-run-id">—</span>
+            </div>
+            <div class="telemetry-card">
+                <span class="label">CONNECTION</span>
+                <span class="value badge" id="tel-conn">IDLE</span>
+            </div>
+            <div class="telemetry-card">
+                <span class="label">RUN STATE</span>
+                <span class="value badge" id="tel-state">IDLE</span>
+            </div>
+            <div class="telemetry-card">
+                <span class="label">REPLAY CURSOR</span>
+                <span class="value mono" id="tel-cursor">0</span>
+            </div>
+            <div class="telemetry-card">
+                <span class="label">LATEST SEQUENCE</span>
+                <span class="value mono" id="tel-latest">0</span>
+            </div>
+            <div class="telemetry-card">
+                <span class="label">DUPLICATES SUPPRESSED</span>
+                <span class="value mono" id="tel-dups">0</span>
+            </div>
+            <div class="telemetry-card">
+                <span class="label">LAST FRAME</span>
+                <span class="value mono" id="tel-last-frame">—</span>
+            </div>
+            <div class="telemetry-card idempotency-card">
+                <span class="label">IDEMPOTENCY KEY</span>
+                <span class="value mono" id="tel-idem">—</span>
+            </div>
+        </section>
+
+        <div class="split-view">
+            <section class="panel output-panel">
+                <h2>Streaming output</h2>
+                <div class="stages-row">
+                    <div class="stage-card" id="stage-plan">
+                        <span class="stage-icon">1</span>
+                        <div class="stage-info"><strong>Plan</strong><small>waiting</small></div>
+                    </div>
+                    <div class="stage-card" id="stage-investigate">
+                        <span class="stage-icon">2</span>
+                        <div class="stage-info"><strong>Investigate</strong><small>waiting</small></div>
+                    </div>
+                    <div class="stage-card" id="stage-summarize">
+                        <span class="stage-icon">3</span>
+                        <div class="stage-info"><strong>Summarize</strong><small>waiting</small></div>
+                    </div>
+                    <div class="stage-card" id="stage-review">
+                        <span class="stage-icon">4</span>
+                        <div class="stage-info"><strong>Review</strong><small>waiting</small></div>
+                    </div>
+                </div>
+                <div class="transcript-box mono" id="transcript">
+                    <span class="muted">Waiting to start...</span>
+                </div>
+            </section>
+
+            <section class="panel timeline-panel">
+                <div class="timeline-header">
+                    <h2>Event timeline</h2>
+                    <label class="toggle">
+                        <input type="checkbox" id="show-heartbeats"> heartbeats
+                    </label>
+                </div>
+                <div class="timeline-list mono" id="timeline">
+                </div>
+                <div class="timeline-footer">
+                    <span id="event-count">0 events applied</span>
+                    <span class="muted">SSE · agent events</span>
+                </div>
+            </section>
+        </div>
+
+        <section class="panel contract-panel">
+            <h2>The reliability contract</h2>
+            <div class="contract-grid">
+                <div>
+                    <h3>Connection is not execution</h3>
+                    <p>The run is owned by the Run process, not the SSE response. Closing this tab does not abort the agent; reconnect attaches to the same <code>runId</code>.</p>
+                </div>
+                <div>
+                    <h3>Append, then publish</h3>
+                    <p>Every event is committed to SQLite with a per-run sequence before the stream can read it. Reconnect asks for <code>after=&lt;cursor&gt;</code> and replays the gap.</p>
+                </div>
+                <div>
+                    <h3>At-least-once, deduplicated</h3>
+                    <p>Delivery can repeat. The browser tracks <code>eventId</code> values, ignores duplicates, and persists its cursor in <code>localStorage</code>.</p>
+                </div>
+                <div>
+                    <h3>Reconnect is not crash recovery</h3>
+                    <p>A server restart can replay committed events, but it cannot resume the interrupted computation. The run is marked failed with an explicit reason.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
