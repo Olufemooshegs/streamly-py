@@ -4,6 +4,20 @@ A Python reimplementation of the DevFest Akure 2026 reliability lab: **Mind the 
 
 A streaming research assistant that survives the browser leaving. Disconnect, wait, reconnect, and watch the journal replay the missed output into the same run.
 
+## 📸 Visual Proof
+
+### The UI
+![Streamly UI](assets/ui-screenshot.png)
+
+### Automated Contract Testing (API-First)
+![Pytest Success](assets/pytest-success.png)
+
+### Crash Recovery Worker in Action
+![Crash Recovery](assets/crash-recovery.png)
+
+---
+
+## Stack
 ## Stack
 
 - **Backend**: Python 3.14, FastAPI, `asyncio`, `aiosqlite`
